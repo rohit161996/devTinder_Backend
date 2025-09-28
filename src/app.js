@@ -1,10 +1,9 @@
 const express = require("express");
+require("dotenv").config();
 const { connectDB } = require("./config/database");
 const app = express();
 const cookieParser = require("cookie-parser")
 const cors = require("cors");
-
-require("dotenv").config();
 
 
 app.use(
@@ -34,5 +33,7 @@ connectDB()
         })
     })
     .catch(err => {
-        console.log("Database cannot be connected");
+        console.error("Database cannot be connected:", err.message);
+        console.error(err); // full error object for more details
+        process.exit(1); // optional: stop server if DB fails
     })

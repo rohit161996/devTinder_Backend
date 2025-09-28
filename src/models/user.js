@@ -73,7 +73,7 @@ userSchema.methods.getJWT = async function () {
      * It will not work with the ()=>{}, Arrow Functions
      */
     const user = this;
-    const token = await jwt.sign({ _id: user._id }, "Dev@Tinder$790", {
+    const token = await jwt.sign({ _id: user._id }, process.env.JWT_TOKEN_STRING, {
         expiresIn: "1d"
     });
 
