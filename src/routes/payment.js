@@ -98,4 +98,17 @@ paymentRouter.post(
     }
 );
 
+paymentRouter.get(
+    "/premium/verify",
+    userAuth,
+    async (req, res) => {
+        const user = req.user;
+        if (user.isPremium) {
+            return res.json({ isPremium: true });
+        }
+
+        return res.json({ isPremium: false });
+    }
+);
+
 module.exports = paymentRouter;
