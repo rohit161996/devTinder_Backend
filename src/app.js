@@ -5,7 +5,7 @@ const { connectDB } = require("./config/database");
 const app = express();
 const cookieParser = require("cookie-parser")
 const cors = require("cors");
-
+const http = require("http");
 
 app.use(
     cors({
@@ -20,16 +20,20 @@ const authRouter = require("./routes/auth");
 const profileRouter = require("./routes/profile");
 const requestsRouter = require("./routes/requests");
 const userRouter = require("./routes/user");
+const { initializeSocket } = require("./utils/socket");
 
 app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestsRouter);
 app.use("/", userRouter);
 
+const server = http.createServer(app);
+initializeSocket(server);
+
 connectDB()
     .then(() => {
         console.log("Database Connected Successfully");
-        app.listen(3000, () => {
+        server.listen(3000, () => {
             console.log("Server is Up and Running");
         })
     })
