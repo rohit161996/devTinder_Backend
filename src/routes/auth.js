@@ -3,6 +3,47 @@ const { validateSignUpData } = require("../utils/validation");
 const bcrypt = require("bcryptjs");
 const authRouter = express.Router();
 const User = require("../models/user");
+const passport = require("passport");
+
+authRouter.get(
+    "/google",
+    passport.authenticate("google",
+        {
+            scope: ["profile", "email"],
+            session: false
+        }
+    )
+);
+
+authRouter.get(
+    "/google/callback",
+    passport.authenticate("google",
+        {
+            session: false,
+            failureRedirect: `${process.env.FRONTEND_URL}/login`
+        }
+    ),
+    async (req, res) => {
+        try {
+            const user = req.user;
+
+            const token = await user.getJWT();
+
+            res.cookie("token", token, {
+                httpOnly: true,
+                expires: new Date(Date.now() + 8 * 3600000),
+                sameSite: "lax",
+                secure: process.env.NODE_ENV === "production",
+            });
+
+            res.redirect(`${process.env.FRONTEND_URL}/oauth-success`);
+
+        } catch (err) {
+            res.redirect(`${process.env.FRONTEND_URL}/login`)
+        }
+    }
+);
+
 
 authRouter.post("/signup",
     async (req, res) => {
@@ -28,7 +69,10 @@ authRouter.post("/signup",
             const token = await savedUser.getJWT();
 
             res.cookie("token", token, {
-               expires: new Date(Date.now() + 8 * 360000 ),
+                httpOnly: true,
+                expires: new Date(Date.now() + 8 * 3600000),
+                sameSite: "lax",
+                secure: process.env.NODE_ENV === "production"
             });
 
             res.json({
@@ -52,6 +96,11 @@ authRouter.post("/login",
                 throw new Error("User with the Email id is not present in the Database");
             }
 
+            /* For Google Authentication */
+            if (user.authProvider !== "local") {
+                throw new Error("Please login using Google");
+            }
+
             /* 2. Check that the password is valid or not  */
             const isValidPassword = await user.validatePasswords(password);
             if (!isValidPassword) {
@@ -64,7 +113,12 @@ authRouter.post("/login",
                 const token = await user.getJWT();
 
                 /* 2. Add the token to cookie and send it back to the client */
-                res.cookie("token", token, { httpOnly: true, expires: new Date(Date.now() + 8 * 3600000) });
+                res.cookie("token", token, { 
+                    httpOnly: true, 
+                    expires: new Date(Date.now() + 8 * 3600000),
+                    sameSite: "lax",
+                    secure: process.env.NODE_ENV === "production"
+                });
                 res.send(user);
             }
 
@@ -76,9 +130,12 @@ authRouter.post("/login",
 
 authRouter.post("/logout",
     async (req, res) => {
-        res.cookie("token", null, {
-            expires: new Date(Date.now()),
+        res.clearCookie("token", {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production"
         });
+
         res.send("User has logged out successfully");
     }
 );

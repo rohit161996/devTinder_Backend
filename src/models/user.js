@@ -28,7 +28,9 @@ const userSchema = new mongoose.Schema(
         },
         password: {
             type: String,
-            required: true,
+            required: function () {
+                return this.authProvider === "local";
+            },
         },
         age: {
             type: Number,
@@ -64,6 +66,19 @@ const userSchema = new mongoose.Schema(
         },
         skills: {
             type: [String],
+        },
+        googleId: {
+            type: String,
+            unique: true,
+            sparse: true
+        },
+        authProvider: {
+            type: String,
+            enum: ["local", "google"],
+            default: "local"
+        },
+        avatar: {
+            type: String
         }
     },
     {
@@ -89,6 +104,21 @@ userSchema.methods.getJWT = async function () {
 
 userSchema.methods.validatePasswords = async function (passwordInputByUser) {
     const user = this;
+
+    /* Only local passwords will be validated Google Login users will not be validated */
+    if(user.authProvider !== "local"){
+        return false;
+    }
+
+    if(!passwordInputByUser){
+        return false;
+    }
+
+    /* If no password is passed by the user then we will return false */
+    if(!user.password){
+        return false;
+    }
+
     const passwordHash = user.password;
     const isPasswordValid = await bcrypt.compare(
         passwordInputByUser,

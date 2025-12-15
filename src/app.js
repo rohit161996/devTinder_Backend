@@ -6,15 +6,23 @@ const app = express();
 const cookieParser = require("cookie-parser")
 const cors = require("cors");
 const http = require("http");
+const passport = require("passport");
+require("./utils/passport");
 
 app.use(
     cors({
-        origin: "http://localhost:5173",
+        origin: process.env.FRONTEND_URL,
         credentials: true,
     })
 );
 app.use(express.json());
 app.use(cookieParser());
+
+console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
+console.log("GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET ? "LOADED" : "MISSING");
+console.log("BACKEND_URL:", process.env.BACKEND_URL);
+
+app.use(passport.initialize());
 
 const authRouter = require("./routes/auth");
 const profileRouter = require("./routes/profile");
